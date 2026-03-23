@@ -2,10 +2,12 @@
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Мениджър на чувствата</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#2d333b;
   --b1:#30363d;--b2:#444c56;
@@ -13,380 +15,361 @@
   --pos:#57ab5a;--pos-l:rgba(87,171,90,.15);
   --neg:#e5534b;--neg-l:rgba(229,83,75,.13);
   --acc:#539bf5;
+  --r:10px;
 }
 html,body{height:100%;background:var(--bg);color:var(--t1);
-  font-family:'Consolas','Courier New',monospace;font-size:13px;line-height:1;overflow:hidden}
-.root{display:flex;flex-direction:column;height:100vh;position:relative}
-.tbar{background:var(--bg2);border-bottom:1px solid var(--b1);padding:0 12px;height:32px;
-  display:flex;align-items:center;gap:10px;flex-shrink:0;user-select:none}
+  font-family:'Consolas','Courier New',monospace;font-size:14px;line-height:1;overflow:hidden}
+.shell{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--b1);padding:0 14px;
+  height:44px;flex-shrink:0;display:flex;align-items:center;gap:8px;user-select:none}
 .dots{display:flex;gap:5px}
 .dot{width:11px;height:11px;border-radius:50%}
 .dot.r{background:#e5534b}.dot.y{background:#c69026}.dot.g{background:#57ab5a}
-.tbar-title{font-size:11px;color:var(--t3);flex:1;text-align:center;letter-spacing:.03em}
-.tbar-clock{font-size:12px;color:var(--t2);min-width:62px;text-align:right}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;
-  transition:background .3s}
-.sync-dot.ok{background:var(--pos)}
-.sync-dot.err{background:var(--neg)}
-.sync-dot.busy{background:var(--acc)}
-.workspace{display:grid;grid-template-columns:55% 45%;flex:1;min-height:0;overflow:hidden}
-.tpanel{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--b1)}
-.tpanel-head{display:grid;grid-template-columns:20px 1fr 46px 72px 58px;
-  background:var(--bg3);border-bottom:1px solid var(--b1);flex-shrink:0}
-.th{padding:5px 6px;font-size:10px;color:var(--t3);text-transform:uppercase;
-  letter-spacing:.06em;border-right:1px solid var(--b1);white-space:nowrap;overflow:hidden}
-.th:last-child{border-right:none}
-.tbody{overflow-y:auto;flex:1}
-.tr{display:grid;grid-template-columns:20px 1fr 46px 72px 58px;
-  border-bottom:1px solid rgba(48,54,61,.5);cursor:pointer;
-  transition:background .07s;align-items:center;min-height:30px}
-.tr:hover{background:var(--bg3)}
-.tr.sel-pos{background:var(--pos-l)}
-.tr.sel-neg{background:var(--neg-l)}
-.tc{padding:4px 6px;border-right:1px solid rgba(48,54,61,.3);
-  height:100%;display:flex;align-items:center}
-.tc:last-child{border-right:none}
-.tc.name{font-size:12px;color:var(--t1);white-space:normal;
-  word-break:break-word;line-height:1.35;overflow:visible}
-.tc.base{font-size:12px;font-weight:600;justify-content:flex-end;white-space:nowrap}
-.tc.base.pos{color:var(--pos)}.tc.base.neg{color:var(--neg)}
-.tc.intens{justify-content:center;gap:4px;overflow:hidden}
-.sl{width:48px;height:2px;accent-color:var(--acc);cursor:pointer}
-.iv{font-size:10px;color:var(--t2);min-width:12px;text-align:right}
-.tc.eff{font-size:12px;font-weight:600;justify-content:flex-end;white-space:nowrap}
-.tc.eff.pos{color:var(--pos)}.tc.eff.neg{color:var(--neg)}.tc.eff.dim{color:var(--t3)}
-.chk{width:11px;height:11px;border:1px solid var(--b2);border-radius:2px;
-  display:flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}
-.chk.on.pos{border-color:var(--pos);color:var(--pos);background:rgba(87,171,90,.2)}
-.chk.on.neg{border-color:var(--neg);color:var(--neg);background:rgba(229,83,75,.18)}
-.sep-row{background:var(--bg2);border-bottom:1px solid var(--b1);padding:3px 6px;
-  font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;
-  display:flex;align-items:center;gap:6px;cursor:default}
-.sep-bar{height:1px;flex:1;background:var(--b1)}
-.rpanel{display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
-.score-box{padding:8px 10px;border-bottom:1px solid var(--b1);flex-shrink:0;
-  display:flex;align-items:baseline;gap:8px}
-.score-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
-.score-val{font-size:26px;font-weight:700;line-height:1}
-.score-val.pos{color:var(--pos)}.score-val.neg{color:var(--neg)}.score-val.zero{color:var(--t2)}
-.score-count{font-size:10px;color:var(--t3);margin-left:auto}
-.dom-box{padding:6px 10px;border-bottom:1px solid var(--b1);flex-shrink:0}
-.box-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;
-  letter-spacing:.05em;margin-bottom:3px}
-.dom-item{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
-.dn{color:var(--t1)}.dv{font-weight:600}
-.dv.pos{color:var(--pos)}.dv.neg{color:var(--neg)}
-.act-box{padding:6px 10px;border-bottom:1px solid var(--b1);flex-shrink:0;
-  display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.topbar-title{font-size:12px;color:var(--t3);flex:1;text-align:center;letter-spacing:.03em}
+.sync{width:7px;height:7px;border-radius:50%;background:var(--t3);transition:background .3s}
+.sync.ok{background:var(--pos)}.sync.err{background:var(--neg)}.sync.busy{background:var(--acc)}
+.clock{font-size:11px;color:var(--t2);min-width:58px;text-align:right}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+.page.active{display:flex}
+
+/* TAB BAR — bottom on mobile */
+.tab-bar{display:flex;background:var(--bg2);border-top:1px solid var(--b1);
+  flex-shrink:0;height:56px;padding-bottom:env(safe-area-inset-bottom,0)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;font-size:10px;color:var(--t3);cursor:pointer;
+  border:none;background:transparent;border-top:2px solid transparent}
+.tab-btn.active{color:var(--acc);border-top-color:var(--acc)}
+.tab-icon{font-size:20px;line-height:1}
+
+/* ── ЗАПИС ── */
+.record-scroll{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+
+.score-card{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r);
+  padding:16px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.score-num{font-size:40px;font-weight:700;line-height:1;min-width:80px}
+.score-num.pos{color:var(--pos)}.score-num.neg{color:var(--neg)}.score-num.zero{color:var(--t2)}
+.score-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.score-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.score-dom{font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.action-row{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap}
 .dt-inp,.tm-inp{background:var(--bg3);border:1px solid var(--b2);color:var(--t1);
-  font-family:inherit;font-size:11px;padding:3px 5px;border-radius:2px;cursor:pointer}
-.tm-inp{width:68px}
-.btn{padding:4px 9px;font-size:11px;font-family:inherit;border:1px solid var(--b2);
-  background:transparent;color:var(--t2);border-radius:2px;cursor:pointer;white-space:nowrap}
-.btn:hover{background:var(--bg4);color:var(--t1)}
-.btn.save{border-color:rgba(87,171,90,.5);color:var(--pos)}
-.btn.save:hover{background:var(--pos-l)}
-.last-box{padding:6px 10px;border-bottom:1px solid var(--b1);flex-shrink:0}
-.last-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;
-  letter-spacing:.05em;margin-bottom:4px;display:flex;justify-content:space-between}
-.last-ts{color:var(--t2);font-size:10px;text-transform:none;letter-spacing:0}
-.last-pills{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
-.last-score-row{display:flex;align-items:center;gap:6px}
-.last-score{font-size:13px;font-weight:700}
-.last-score.pos{color:var(--pos)}.last-score.neg{color:var(--neg)}.last-score.zero{color:var(--t3)}
-.last-del{font-size:10px;color:var(--t3);cursor:pointer;padding:1px 5px;
-  border:1px solid var(--b1);border-radius:2px;margin-left:auto}
-.last-del:hover{color:var(--neg);border-color:rgba(229,83,75,.4)}
-.day-box{padding:6px 10px;border-bottom:1px solid var(--b1);flex-shrink:0}
-.day-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
-.day-key{color:var(--t3)}.day-val{color:var(--t2)}
-.day-val.pos{color:var(--pos);font-weight:600}
-.day-val.neg{color:var(--neg);font-weight:600}
-.spacer{flex:1}
-.arch-link-box{padding:5px 10px;border-top:1px solid var(--b1);flex-shrink:0;
-  display:flex;align-items:center;justify-content:space-between}
-.arch-link{font-size:10px;color:var(--t3);cursor:pointer;user-select:none}
-.arch-link:hover{color:var(--acc)}
-.day-count{font-size:10px;color:var(--t3)}
-.bottom{display:flex;flex-direction:column;flex-shrink:0;border-top:1px solid var(--b1);background:var(--bg)}
-.period-row{display:flex;height:26px;align-items:center;border-bottom:1px solid var(--b1);padding:0 6px}
-.per-btn{padding:3px 9px;font-size:11px;color:var(--t3);cursor:pointer;
-  border-bottom:2px solid transparent;border-top:2px solid transparent;
-  white-space:nowrap;user-select:none}
-.per-btn:hover{color:var(--t1)}
-.per-btn.active{color:var(--acc);border-bottom-color:var(--acc)}
-.chart-mode{font-size:10px;color:var(--t3);cursor:pointer;padding:2px 7px;
-  border:1px solid var(--b1);border-radius:2px;margin-left:4px;user-select:none}
-.chart-mode:hover{color:var(--t1)}
-.chart-mode.active{color:var(--acc);border-color:rgba(83,155,245,.4)}
-.chart-area{padding:6px 10px 8px;position:relative;height:110px}
-.chart-area canvas{display:block;width:100%;height:100%}
-.arch-overlay{display:none;position:absolute;top:32px;left:0;right:0;bottom:0;
-  background:var(--bg);z-index:20;flex-direction:column}
-.arch-overlay.show{display:flex}
-.arch-toolbar{padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--b1);
-  display:flex;align-items:center;gap:8px;flex-shrink:0}
-.arch-lbl{font-size:11px;color:var(--t2);flex:1}
-.arch-close{font-size:11px;color:var(--t3);cursor:pointer;padding:3px 8px;
-  border:1px solid var(--b1);border-radius:2px;background:transparent;font-family:inherit}
-.arch-close:hover{color:var(--t1)}
-.arch-scroll{flex:1;overflow-y:auto}
-.arch-table{width:100%;border-collapse:collapse;font-size:11px}
-.arch-table th{padding:5px 10px;text-align:left;color:var(--t3);background:var(--bg2);
-  border-bottom:1px solid var(--b1);position:sticky;top:0;font-size:10px;
-  text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;font-family:inherit}
-.arch-table th:hover{color:var(--t1)}
-.arch-table td{padding:5px 10px;border-bottom:1px solid rgba(48,54,61,.4);
-  color:var(--t1);vertical-align:middle}
-.arch-table tr:hover td{background:var(--bg3)}
-.pill{display:inline-block;padding:1px 5px;border-radius:2px;font-size:10px;
-  border:1px solid transparent;margin:1px 1px}
+  font-family:inherit;font-size:14px;padding:12px 10px;border-radius:8px;cursor:pointer;flex:1;min-width:0}
+.tm-inp{flex:0 0 96px}
+.save-btn{padding:12px 18px;font-size:14px;font-family:inherit;
+  border:1px solid rgba(87,171,90,.5);background:var(--pos-l);color:var(--pos);
+  border-radius:8px;cursor:pointer;font-weight:600;flex-shrink:0}
+.save-btn:active{opacity:.7}
+.clear-btn{padding:12px 14px;font-size:14px;font-family:inherit;
+  border:1px solid var(--b2);background:transparent;color:var(--t2);border-radius:8px;cursor:pointer}
+.clear-btn:active{opacity:.7}
+
+.grp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;padding:2px 2px;flex-shrink:0}
+.grp-lbl.pos{color:rgba(87,171,90,.8)}.grp-lbl.neg{color:rgba(229,83,75,.8)}
+
+.emo-row{background:var(--bg2);border:1px solid var(--b1);border-radius:8px;
+  margin-bottom:6px;overflow:hidden;flex-shrink:0}
+.emo-row.sel-pos{border-color:rgba(87,171,90,.5);background:var(--pos-l)}
+.emo-row.sel-neg{border-color:rgba(229,83,75,.4);background:var(--neg-l)}
+.emo-main{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;min-height:50px}
+.emo-chk{width:20px;height:20px;border:1.5px solid var(--b2);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.emo-chk.on.pos{border-color:var(--pos);color:var(--pos);background:rgba(87,171,90,.2)}
+.emo-chk.on.neg{border-color:var(--neg);color:var(--neg);background:rgba(229,83,75,.18)}
+.emo-name{flex:1;font-size:15px;color:var(--t1)}
+.emo-base{font-size:13px;font-weight:600;min-width:28px;text-align:right}
+.emo-base.pos{color:var(--pos)}.emo-base.neg{color:var(--neg)}
+.emo-eff{font-size:14px;font-weight:700;min-width:38px;text-align:right}
+.emo-eff.pos{color:var(--pos)}.emo-eff.neg{color:var(--neg)}.emo-eff.dim{color:var(--t3)}
+.emo-sl{display:none;padding:6px 14px 13px;align-items:center;gap:10px}
+.emo-sl.show{display:flex}
+.emo-sl input[type=range]{flex:1;height:3px;accent-color:var(--acc);cursor:pointer}
+.sl-val{font-size:12px;color:var(--t2);min-width:20px;text-align:right}
+.sl-lbl{font-size:10px;color:var(--t3);white-space:nowrap}
+
+/* ── ДНЕВНИК ── */
+.journal-page{overflow:hidden}
+.date-nav{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  background:var(--bg2);border-bottom:1px solid var(--b1);flex-shrink:0}
+.date-nav input{flex:1;background:var(--bg3);border:1px solid var(--b2);color:var(--t1);
+  font-family:inherit;font-size:14px;padding:10px;border-radius:8px;cursor:pointer}
+.nav-arrow{padding:10px 14px;font-size:18px;border:1px solid var(--b2);
+  background:transparent;color:var(--t2);border-radius:8px;cursor:pointer;font-family:inherit}
+.nav-arrow:active{background:var(--bg3)}
+.journal-scroll{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+
+.j-card{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r);padding:14px}
+.j-card-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.j-ts{color:var(--t2);text-transform:none;letter-spacing:0;font-size:11px}
+.pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.pill{display:inline-block;padding:4px 9px;border-radius:5px;font-size:12px;border:1px solid transparent}
 .pill.pos{color:var(--pos);border-color:rgba(87,171,90,.3);background:rgba(87,171,90,.1)}
 .pill.neg{color:var(--neg);border-color:rgba(229,83,75,.25);background:rgba(229,83,75,.09)}
-.pill.score-pos{color:var(--pos);border-color:rgba(87,171,90,.4);background:rgba(87,171,90,.15);font-weight:700}
-.pill.score-neg{color:var(--neg);border-color:rgba(229,83,75,.35);background:rgba(229,83,75,.13);font-weight:700}
-.pill.score-z{color:var(--t3);border-color:var(--b1);background:var(--bg3)}
-.last-empty{font-size:11px;color:var(--t3)}
+.j-foot{display:flex;align-items:center;gap:10px}
+.j-score{font-size:18px;font-weight:700}
+.j-score.pos{color:var(--pos)}.j-score.neg{color:var(--neg)}.j-score.zero{color:var(--t3)}
+.j-del{margin-left:auto;font-size:12px;color:var(--t3);cursor:pointer;
+  padding:5px 10px;border:1px solid var(--b1);border-radius:5px;background:transparent;font-family:inherit}
+.j-del:active{color:var(--neg);border-color:rgba(229,83,75,.4)}
+.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.sum-key{color:var(--t3)}.sum-val{color:var(--t2)}
+.sum-val.pos{color:var(--pos);font-weight:600}.sum-val.neg{color:var(--neg);font-weight:600}
+.empty-day{padding:20px;text-align:center;font-size:13px;color:var(--t3)}
+
+/* ── ГРАФИКИ ── */
+.graphs-scroll{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.period-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;flex-shrink:0}
+.period-scroll::-webkit-scrollbar{display:none}
+.per-btn{padding:8px 16px;font-size:13px;color:var(--t3);cursor:pointer;
+  border:1px solid var(--b1);border-radius:20px;white-space:nowrap;
+  background:transparent;font-family:inherit;flex-shrink:0}
+.per-btn.active{color:var(--acc);border-color:var(--acc);background:rgba(83,155,245,.08)}
+.mode-row{display:flex;gap:6px;flex-shrink:0}
+.mode-btn{padding:8px 16px;font-size:13px;color:var(--t3);cursor:pointer;
+  border:1px solid var(--b1);border-radius:8px;background:transparent;font-family:inherit}
+.mode-btn.active{color:var(--acc);border-color:rgba(83,155,245,.4);background:rgba(83,155,245,.08)}
+.chart-card{background:var(--bg2);border:1px solid var(--b1);border-radius:var(--r);padding:14px;flex-shrink:0}
+.chart-card-title{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.chart-wrap{position:relative;width:100%;height:200px}
+.chart-wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+
+/* ── АРХИВ ── */
+.archive-page{overflow:hidden}
+.arch-bar{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.arch-count{font-size:13px;color:var(--t2)}
+.arch-clear-btn{font-size:12px;color:var(--neg);cursor:pointer;padding:6px 12px;
+  border:1px solid rgba(229,83,75,.3);border-radius:6px;background:transparent;font-family:inherit}
+.arch-scroll{flex:1;overflow-y:auto}
+.arch-entry{padding:14px;border-bottom:1px solid rgba(48,54,61,.4)}
+.arch-dt{font-size:11px;color:var(--t3);margin-bottom:6px}
+.arch-pills{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px}
+.arch-foot{display:flex;align-items:center;gap:10px}
+.arch-score{font-size:16px;font-weight:700}
+.arch-score.pos{color:var(--pos)}.arch-score.neg{color:var(--neg)}.arch-score.zero{color:var(--t3)}
+.arch-del{margin-left:auto;font-size:11px;color:var(--t3);cursor:pointer;
+  padding:4px 10px;border:1px solid var(--b1);border-radius:5px;background:transparent;font-family:inherit}
+.arch-del:active{color:var(--neg)}
+.arch-empty{padding:32px;text-align:center;font-size:13px;color:var(--t3)}
+
+/* ── DESKTOP ── */
+@media(min-width:768px){
+  html,body{font-size:13px}
+  .shell{flex-direction:column}
+  .tab-bar{order:-1;border-top:none;border-bottom:1px solid var(--b1);height:36px;padding-bottom:0}
+  .tab-btn{flex-direction:row;gap:6px;font-size:12px;border-top:none;border-bottom:2px solid transparent}
+  .tab-btn.active{border-bottom-color:var(--acc);border-top:none}
+  .tab-icon{font-size:13px}
+  .score-num{font-size:28px;min-width:60px}
+  .emo-main{padding:8px 12px;min-height:36px}
+  .emo-chk{width:14px;height:14px;border-radius:3px;font-size:9px}
+  .emo-name{font-size:13px}
+  .emo-sl{padding:3px 12px 8px}
+  .save-btn,.clear-btn{padding:8px 14px;font-size:13px}
+  .dt-inp,.tm-inp{padding:8px 10px;font-size:13px}
+  .chart-wrap{height:150px}
+}
 </style>
 </head>
 <body>
-<div class="root">
-
-<div class="tbar">
-  <div class="dots">
-    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-  </div>
-  <div class="tbar-title">Мениджър на чувствата — Емоционален журнал</div>
-  <div class="sync-dot" id="sync-dot" title="Връзка със сървъра"></div>
-  <div class="tbar-clock" id="tbar-clock"></div>
-</div>
-
-<div class="workspace">
-  <div class="tpanel">
-    <div class="tpanel-head">
-      <div class="th"></div>
-      <div class="th">Чувство</div>
-      <div class="th" style="text-align:right">База</div>
-      <div class="th" style="text-align:center">Сила</div>
-      <div class="th" style="text-align:right">Оценка</div>
-    </div>
-    <div class="tbody" id="tbody"></div>
+<div class="shell">
+  <div class="topbar">
+    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+    <div class="topbar-title">Мениджър на чувствата</div>
+    <div class="sync" id="sync"></div>
+    <div class="clock" id="clock"></div>
   </div>
 
-  <div class="rpanel">
-    <div class="score-box">
-      <span class="score-lbl">Оценка</span>
-      <span class="score-val zero" id="score-val">0</span>
-      <span class="score-count" id="score-count">0 чувства</span>
-    </div>
-    <div class="dom-box">
-      <div class="box-lbl">Доминиращи</div>
-      <div id="dom-list"><span style="font-size:10px;color:var(--t3)">—</span></div>
-    </div>
-    <div class="act-box">
-      <input type="date" class="dt-inp" id="inp-date">
-      <input type="time" class="tm-inp" id="inp-time">
-      <button class="btn save" onclick="saveEntry()">▶ Запази</button>
-      <button class="btn" onclick="clearSel()">✕</button>
-    </div>
-    <div class="last-box">
-      <div class="last-lbl">
-        <span>Последен запис</span>
-        <span class="last-ts" id="last-ts"></span>
+  <div class="content">
+    <!-- ЗАПИС -->
+    <div class="page active" id="page-record">
+      <div class="record-scroll">
+        <div class="score-card">
+          <div class="score-num zero" id="score-num">0</div>
+          <div class="score-info">
+            <div class="score-lbl">Обща оценка</div>
+            <div class="score-dom" id="score-dom">Изберете чувства</div>
+          </div>
+        </div>
+        <div class="action-row">
+          <input type="date" class="dt-inp" id="inp-date">
+          <input type="time" class="tm-inp" id="inp-time">
+          <button class="save-btn" onclick="saveEntry()">▶ Запази</button>
+          <button class="clear-btn" onclick="clearSel()">✕</button>
+        </div>
+        <div class="grp-lbl pos">▲ Положителни</div>
+        <div id="pos-list"></div>
+        <div class="grp-lbl neg">▼ Отрицателни</div>
+        <div id="neg-list"></div>
       </div>
-      <div id="last-content"><span class="last-empty">—</span></div>
     </div>
-    <div class="day-box">
-      <div class="box-lbl">Обобщение за деня</div>
-      <div id="day-summary"><span style="font-size:11px;color:var(--t3)">—</span></div>
+
+    <!-- ДНЕВНИК -->
+    <div class="page journal-page" id="page-journal">
+      <div class="date-nav">
+        <button class="nav-arrow" onclick="shiftDate(-1)">‹</button>
+        <input type="date" id="journal-date">
+        <button class="nav-arrow" onclick="shiftDate(1)">›</button>
+      </div>
+      <div class="journal-scroll" id="journal-scroll"></div>
     </div>
-    <div class="spacer"></div>
-    <div class="arch-link-box">
-      <span class="day-count" id="day-count"></span>
-      <span class="arch-link" onclick="toggleArchive()">Архив ▸</span>
+
+    <!-- ГРАФИКИ -->
+    <div class="page" id="page-graphs">
+      <div class="graphs-scroll">
+        <div class="period-scroll">
+          <button class="per-btn active" onclick="setPeriod(7,this)">7 дни</button>
+          <button class="per-btn" onclick="setPeriod(30,this)">30 дни</button>
+          <button class="per-btn" onclick="setPeriod(90,this)">3 мес</button>
+          <button class="per-btn" onclick="setPeriod(180,this)">6 мес</button>
+          <button class="per-btn" onclick="setPeriod(270,this)">9 мес</button>
+          <button class="per-btn" onclick="setPeriod(365,this)">1 год</button>
+        </div>
+        <div class="mode-row">
+          <button class="mode-btn active" onclick="setMode('score',this)">Оценка</button>
+          <button class="mode-btn" onclick="setMode('freq',this)">Честота</button>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title" id="chart-title">Оценка по дни</div>
+          <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- АРХИВ -->
+    <div class="page archive-page" id="page-archive">
+      <div class="arch-bar">
+        <span class="arch-count" id="arch-count">0 записа</span>
+        <button class="arch-clear-btn" onclick="clearArchive()">✕ Изчисти</button>
+      </div>
+      <div class="arch-scroll" id="arch-scroll"></div>
     </div>
   </div>
-</div>
 
-<div class="bottom">
-  <div class="period-row">
-    <span class="per-btn active" onclick="setPeriod(7,this)">7 дни</span>
-    <span class="per-btn" onclick="setPeriod(30,this)">30 дни</span>
-    <span class="per-btn" onclick="setPeriod(90,this)">3 мес</span>
-    <span class="per-btn" onclick="setPeriod(180,this)">6 мес</span>
-    <span class="per-btn" onclick="setPeriod(270,this)">9 мес</span>
-    <span class="per-btn" onclick="setPeriod(365,this)">1 год</span>
-    <span class="chart-mode active" id="mode-score" onclick="setMode('score',this)">Оценка</span>
-    <span class="chart-mode" id="mode-freq"  onclick="setMode('freq',this)">Честота</span>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="goTab('record',this)">
+      <span class="tab-icon">✎</span><span>Запис</span>
+    </button>
+    <button class="tab-btn" onclick="goTab('journal',this)">
+      <span class="tab-icon">◷</span><span>Дневник</span>
+    </button>
+    <button class="tab-btn" onclick="goTab('graphs',this)">
+      <span class="tab-icon">▦</span><span>Графики</span>
+    </button>
+    <button class="tab-btn" onclick="goTab('archive',this)">
+      <span class="tab-icon">☰</span><span>Архив</span>
+    </button>
   </div>
-  <div class="chart-area"><canvas id="main-chart"></canvas></div>
-</div>
-
-<div class="arch-overlay" id="arch-overlay">
-  <div class="arch-toolbar">
-    <span class="arch-lbl" id="arch-lbl">Архив</span>
-    <button class="btn" style="width:auto;color:var(--neg);border-color:rgba(229,83,75,.3)"
-      onclick="clearArchive()">✕ Изчисти</button>
-    <button class="arch-close" onclick="toggleArchive()">Затвори ✕</button>
-  </div>
-  <div class="arch-scroll">
-    <table class="arch-table">
-      <thead><tr>
-        <th onclick="sortBy('ts')">Дата / Час</th>
-        <th onclick="sortBy('score')">Оценка</th>
-        <th>Доминиращи</th>
-        <th onclick="sortBy('count')">Брой</th>
-        <th>Всички чувства</th>
-      </tr></thead>
-      <tbody id="arch-tbody"></tbody>
-    </table>
-  </div>
-</div>
-
 </div>
 
 <script>
 'use strict';
-
-const EMO = [
-  {id:'shtastie',  name:'Щастие',       base:10},
-  {id:'lyubov',    name:'Любов',         base:9},
-  {id:'radost',    name:'Радост',        base:8},
-  {id:'pylnota',   name:'Пълнота',       base:8},
-  {id:'optimizym', name:'Оптимизъм',     base:7},
-  {id:'dovolstvo', name:'Доволство',     base:6},
-  {id:'osyznatost',name:'Осъзнатост',    base:5},
-  {id:'otchaianie',name:'Отчаяние',      base:-9},
-  {id:'zaguba',    name:'Загуба',        base:-8},
-  {id:'bezizkh',   name:'Безизходица',   base:-8},
-  {id:'gnyav',     name:'Гняв',          base:-7},
-  {id:'othurlyan', name:'Отхвърленост',  base:-7},
-  {id:'tyaga',     name:'Тъга',          base:-6},
-  {id:'samota',    name:'Самота',        base:-6},
-  {id:'trevoshno', name:'Тревожност',    base:-5},
-  {id:'revnost',   name:'Ревност',       base:-5},
-  {id:'lipsa',     name:'Липса',         base:-4},
-  {id:'sazhalenie',name:'Съжаление',     base:-4},
-  {id:'osajdane',  name:'Осъждане',      base:-3},
+const EMO=[
+  {id:'shtastie',  name:'Щастие',      base:10},
+  {id:'lyubov',    name:'Любов',        base:9},
+  {id:'radost',    name:'Радост',       base:8},
+  {id:'pylnota',   name:'Пълнота',      base:8},
+  {id:'optimizym', name:'Оптимизъм',    base:7},
+  {id:'dovolstvo', name:'Доволство',    base:6},
+  {id:'osyznatost',name:'Осъзнатост',   base:5},
+  {id:'otchaianie',name:'Отчаяние',     base:-9},
+  {id:'zaguba',    name:'Загуба',       base:-8},
+  {id:'bezizkh',   name:'Безизходица',  base:-8},
+  {id:'gnyav',     name:'Гняв',         base:-7},
+  {id:'othurlyan', name:'Отхвърленост', base:-7},
+  {id:'tyaga',     name:'Тъга',         base:-6},
+  {id:'samota',    name:'Самота',       base:-6},
+  {id:'trevoshno', name:'Тревожност',   base:-5},
+  {id:'revnost',   name:'Ревност',      base:-5},
+  {id:'lipsa',     name:'Липса',        base:-4},
+  {id:'sazhalenie',name:'Съжаление',    base:-4},
+  {id:'osajdane',  name:'Осъждане',     base:-3},
 ];
+const POS='#57ab5a',NEG='#e5534b',ACC='#539bf5',GRID='rgba(48,54,61,.6)',MUTED='#545d68';
+let archive=[],sel={},period=7,chartMode='score',currentTab='record';
 
-const POS='#57ab5a', NEG='#e5534b', ACC='#539bf5';
-const GRID='rgba(48,54,61,0.6)', MUTED='#545d68';
-
-// API base — same origin (сървърът сервира и HTML и API)
-const API = '';
-
-let archive   = [];
-let sel       = {};
-let period    = 7, chartMode = 'score';
-let archVisible = false, archSort = {f:'ts', d:-1};
-
-// ── sync indicator ──
-function setSyncState(state){ // 'ok' | 'err' | 'busy'
-  const d = document.getElementById('sync-dot');
-  d.className = 'sync-dot ' + state;
-}
-
-// ── clock ──
-function updateClock(){
-  document.getElementById('tbar-clock').textContent =
+// clock
+setInterval(()=>{
+  document.getElementById('clock').textContent=
     new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-updateClock(); setInterval(updateClock, 1000);
+},1000);
 
-function nowDate(){ return new Date().toISOString().slice(0,10); }
-function nowTime(){
-  const n = new Date();
-  return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-}
-document.getElementById('inp-date').value = nowDate();
-document.getElementById('inp-time').value = nowTime();
-document.getElementById('inp-date').addEventListener('change', renderDaySummary);
+function setSS(s){document.getElementById('sync').className='sync '+s}
+function nowDate(){return new Date().toISOString().slice(0,10)}
+function nowTime(){const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
 
-// ── API calls ──
-async function apiLoad(){
-  setSyncState('busy');
-  try {
-    const r = await fetch(`${API}/entries?days=365`);
-    archive  = await r.json();
-    setSyncState('ok');
-  } catch(e){
-    setSyncState('err');
-  }
-  renderLastEntry(); renderDaySummary(); renderChart();
+document.getElementById('inp-date').value=nowDate();
+document.getElementById('inp-time').value=nowTime();
+document.getElementById('journal-date').value=nowDate();
+document.getElementById('journal-date').addEventListener('change',renderJournal);
+
+function shiftDate(d){
+  const dt=new Date(document.getElementById('journal-date').value+'T12:00:00');
+  dt.setDate(dt.getDate()+d);
+  document.getElementById('journal-date').value=dt.toISOString().slice(0,10);
+  renderJournal();
 }
 
-async function apiSave(entry){
-  setSyncState('busy');
-  try {
-    await fetch(`${API}/entries`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(entry)
-    });
-    setSyncState('ok');
-  } catch(e){ setSyncState('err'); }
+function goTab(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='journal')renderJournal();
+  if(tab==='graphs')setTimeout(renderChart,50);
+  if(tab==='archive')renderArchive();
 }
 
-async function apiDelete(ts){
-  setSyncState('busy');
-  try {
-    await fetch(`${API}/entries?ts=${encodeURIComponent(ts)}`, {method:'DELETE'});
-    setSyncState('ok');
-  } catch(e){ setSyncState('err'); }
+function buildRows(){
+  EMO.filter(e=>e.base>0).forEach(e=>addRow('pos-list',e));
+  EMO.filter(e=>e.base<0).forEach(e=>addRow('neg-list',e));
 }
-
-// ── build table ──
-function buildTable(){
-  const tb = document.getElementById('tbody'); tb.innerHTML='';
-  const sep = (label, color) => {
-    const d = document.createElement('div'); d.className='sep-row';
-    d.innerHTML=`<span style="color:${color}">${label}</span><div class="sep-bar"></div>`;
-    tb.appendChild(d);
-  };
-  sep('▲ Положителни','#57ab5a');
-  EMO.filter(e=>e.base>0).forEach(e=>addRow(tb,e));
-  sep('▼ Отрицателни','#e5534b');
-  EMO.filter(e=>e.base<0).forEach(e=>addRow(tb,e));
-}
-
-function addRow(tb,e){
-  const isPos=e.base>0, cls=isPos?'pos':'neg';
-  const row=document.createElement('div');
-  row.className='tr'; row.id='tr-'+e.id;
-  row.innerHTML=`
-    <div class="tc" style="justify-content:center"><div class="chk" id="chk-${e.id}"></div></div>
-    <div class="tc name">${e.name}</div>
-    <div class="tc base ${cls}">${isPos?'+':''}${e.base}</div>
-    <div class="tc intens" id="iw-${e.id}" style="opacity:.3;pointer-events:none">
-      <input class="sl" type="range" min="1" max="10" value="5" id="sl-${e.id}"
-        oninput="event.stopPropagation();setInt('${e.id}',+this.value)">
-      <span class="iv" id="iv-${e.id}">5</span>
+function addRow(cid,e){
+  const isPos=e.base>0,cls=isPos?'pos':'neg';
+  const d=document.createElement('div');
+  d.className='emo-row';d.id='er-'+e.id;
+  d.innerHTML=`
+    <div class="emo-main" onclick="toggle('${e.id}')">
+      <div class="emo-chk" id="chk-${e.id}"></div>
+      <div class="emo-name">${e.name}</div>
+      <div class="emo-base ${cls}">${isPos?'+':''}${e.base}</div>
+      <div class="emo-eff dim" id="eff-${e.id}">—</div>
     </div>
-    <div class="tc eff dim" id="eff-${e.id}" style="justify-content:flex-end">—</div>`;
-  row.addEventListener('click', ev=>{ if(ev.target.classList.contains('sl')) return; toggle(e); });
-  tb.appendChild(row);
+    <div class="emo-sl" id="slw-${e.id}">
+      <span class="sl-lbl">Сила</span>
+      <input type="range" min="1" max="10" value="5" id="sl-${e.id}"
+        oninput="setInt('${e.id}',+this.value)">
+      <span class="sl-val" id="iv-${e.id}">5</span>
+    </div>`;
+  document.getElementById(cid).appendChild(d);
 }
 
-function toggle(e){
-  const isPos=e.base>0, cls=isPos?'pos':'neg';
-  const row=document.getElementById('tr-'+e.id);
-  const chk=document.getElementById('chk-'+e.id);
-  const iw =document.getElementById('iw-'+e.id);
-  const eff=document.getElementById('eff-'+e.id);
-  if(sel[e.id]!==undefined){
-    delete sel[e.id];
-    row.className='tr'; chk.className='chk'; chk.textContent='';
-    iw.style.opacity='.3'; iw.style.pointerEvents='none';
-    eff.className='tc eff dim'; eff.textContent='—';
-  } else {
-    sel[e.id]=5;
-    row.className='tr sel-'+cls;
-    chk.className='chk on '+cls; chk.textContent='✓';
-    document.getElementById('sl-'+e.id).value=5;
-    document.getElementById('iv-'+e.id).textContent='5';
-    iw.style.opacity='1'; iw.style.pointerEvents='auto';
-    eff.className='tc eff '+cls;
+function toggle(id){
+  const e=EMO.find(x=>x.id===id);
+  const isPos=e.base>0,cls=isPos?'pos':'neg';
+  const row=document.getElementById('er-'+id);
+  const chk=document.getElementById('chk-'+id);
+  const slw=document.getElementById('slw-'+id);
+  const eff=document.getElementById('eff-'+id);
+  if(sel[id]!==undefined){
+    delete sel[id];
+    row.className='emo-row';chk.className='emo-chk';chk.textContent='';
+    slw.className='emo-sl';eff.className='emo-eff dim';eff.textContent='—';
+  }else{
+    sel[id]=5;
+    row.className='emo-row sel-'+cls;
+    chk.className='emo-chk on '+cls;chk.textContent='✓';
+    document.getElementById('sl-'+id).value=5;
+    document.getElementById('iv-'+id).textContent='5';
+    slw.className='emo-sl show';
+    eff.className='emo-eff '+cls;
     eff.textContent=(e.base>0?'+':'')+e.base;
   }
   refresh();
@@ -397,7 +380,8 @@ function setInt(id,val){
   document.getElementById('iv-'+id).textContent=val;
   const e=EMO.find(x=>x.id===id);
   const v=Math.round(e.base*(val/5));
-  document.getElementById('eff-'+id).textContent=(v>0?'+':'')+v;
+  const eff=document.getElementById('eff-'+id);
+  eff.textContent=(v>0?'+':'')+v;
   refresh();
 }
 
@@ -407,273 +391,241 @@ function calcScore(){
 
 function refresh(){
   const score=calcScore();
-  const count=Object.keys(sel).length;
-  const sv=document.getElementById('score-val');
-  sv.textContent=(score>0?'+':'')+score;
-  sv.className='score-val '+(score>0?'pos':score<0?'neg':'zero');
-  document.getElementById('score-count').textContent=count+(count===1?' чувство':' чувства');
+  const sn=document.getElementById('score-num');
+  sn.textContent=(score>0?'+':'')+score;
+  sn.className='score-num '+(score>0?'pos':score<0?'neg':'zero');
   const active=EMO.filter(e=>sel[e.id]!==undefined)
     .map(e=>({...e,eff:Math.round(e.base*(sel[e.id]/5))}))
     .sort((a,b)=>Math.abs(b.eff)-Math.abs(a.eff));
-  const dl=document.getElementById('dom-list');
-  if(!active.length){dl.innerHTML='<span style="font-size:10px;color:var(--t3)">—</span>';return;}
-  dl.innerHTML=active.slice(0,5).map(e=>`
-    <div class="dom-item">
-      <span class="dn">${e.name}</span>
-      <span class="dv ${e.base>0?'pos':'neg'}">${e.eff>0?'+':''}${e.eff}</span>
-    </div>`).join('');
+  document.getElementById('score-dom').textContent=
+    active.length?active.slice(0,3).map(e=>e.name).join(', '):'Изберете чувства';
+}
+
+function clearSel(){
+  Object.keys(sel).forEach(id=>{
+    const e=EMO.find(x=>x.id===id);if(!e)return;
+    const cls=e.base>0?'pos':'neg';
+    const row=document.getElementById('er-'+id);if(row)row.className='emo-row';
+    const chk=document.getElementById('chk-'+id);if(chk){chk.className='emo-chk';chk.textContent='';}
+    const slw=document.getElementById('slw-'+id);if(slw)slw.className='emo-sl';
+    const eff=document.getElementById('eff-'+id);if(eff){eff.className='emo-eff dim';eff.textContent='—';}
+  });
+  sel={};refresh();
+}
+
+async function apiLoad(){
+  setSS('busy');
+  try{const r=await fetch('/entries?days=365');archive=await r.json();setSS('ok');}
+  catch(e){setSS('err');}
+  renderJournal();renderArchive();
+}
+async function apiSave(entry){
+  setSS('busy');
+  try{await fetch('/entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});setSS('ok');}
+  catch(e){setSS('err');}
+}
+async function apiDelete(ts){
+  setSS('busy');
+  try{await fetch('/entries?ts='+encodeURIComponent(ts),{method:'DELETE'});setSS('ok');}
+  catch(e){setSS('err');}
 }
 
 async function saveEntry(){
   const date=document.getElementById('inp-date').value;
   const time=document.getElementById('inp-time').value;
-  if(!date||!time) return;
+  if(!date||!time)return;
   const emotions=EMO.filter(e=>sel[e.id]!==undefined).map(e=>({
-    id:e.id, name:e.name, intensity:sel[e.id],
-    base:e.base, effective:Math.round(e.base*(sel[e.id]/5))
+    id:e.id,name:e.name,intensity:sel[e.id],base:e.base,effective:Math.round(e.base*(sel[e.id]/5))
   }));
-  if(!emotions.length) return;
+  if(!emotions.length)return;
   const score=calcScore();
   const ts=date+'T'+time;
   const entry={ts,date,time,score,emotions};
   await apiSave(entry);
-  // update local cache
   const idx=archive.findIndex(r=>r.ts===ts);
-  if(idx>=0) archive[idx]=entry; else archive.unshift(entry);
+  if(idx>=0)archive[idx]=entry;else archive.unshift(entry);
   archive.sort((a,b)=>b.ts.localeCompare(a.ts));
   document.getElementById('inp-time').value=nowTime();
-  clearSel();
-  renderLastEntry(); renderDaySummary(); renderChart();
+  clearSel();renderJournal();renderArchive();
+  if(currentTab==='graphs')renderChart();
 }
 
-function clearSel(){
-  Object.keys(sel).forEach(id=>{
-    const e=EMO.find(x=>x.id===id); if(!e) return;
-    const row=document.getElementById('tr-'+id); if(row) row.className='tr';
-    const chk=document.getElementById('chk-'+id); if(chk){chk.className='chk';chk.textContent='';}
-    const iw=document.getElementById('iw-'+id); if(iw){iw.style.opacity='.3';iw.style.pointerEvents='none';}
-    const eff=document.getElementById('eff-'+id); if(eff){eff.className='tc eff dim';eff.textContent='—';}
-  });
-  sel={}; refresh();
-}
-
-function renderLastEntry(){
-  const el=document.getElementById('last-content');
-  const ts=document.getElementById('last-ts');
-  if(!archive.length){el.innerHTML='<span class="last-empty">—</span>';ts.textContent='';return;}
-  const r=archive[0];
-  const sc=r.score;
-  const pills=r.emotions.map(e=>`<span class="pill ${e.base>0?'pos':'neg'}">${e.name}</span>`).join('');
-  const dtStr=new Date(r.date+'T'+r.time).toLocaleString('bg-BG',
+function renderJournal(){
+  const date=document.getElementById('journal-date').value;
+  const entries=archive.filter(r=>r.date===date).sort((a,b)=>b.ts.localeCompare(a.ts));
+  const sc=document.getElementById('journal-scroll');
+  if(!entries.length){sc.innerHTML='<div class="empty-day">Няма записи за тази дата</div>';return;}
+  const last=entries[0];
+  const lastSc=last.score;
+  const lastDt=new Date(last.date+'T'+last.time).toLocaleString('bg-BG',
     {weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  ts.textContent=dtStr;
-  el.innerHTML=`
-    <div class="last-pills">${pills}</div>
-    <div class="last-score-row">
-      <span class="last-score ${sc>0?'pos':sc<0?'neg':'zero'}">${sc>0?'+':''}${sc}</span>
-      <span class="last-del" onclick="deleteEntry('${r.ts}')">✕ изтрий</span>
-    </div>`;
-}
-
-function renderDaySummary(){
-  const date=document.getElementById('inp-date').value;
-  const entries=archive.filter(r=>r.date===date);
-  document.getElementById('day-count').textContent=entries.length?entries.length+' записа днес':'';
-  const ds=document.getElementById('day-summary');
-  if(!entries.length){ds.innerHTML='<span style="font-size:11px;color:var(--t3)">—</span>';return;}
-  const totalScore=entries.reduce((s,r)=>s+r.score,0);
+  const lastPills=last.emotions.map(e=>`<span class="pill ${e.base>0?'pos':'neg'}">${e.name}</span>`).join('');
+  const total=entries.reduce((s,r)=>s+r.score,0);
   const freq={};
   entries.forEach(r=>r.emotions.forEach(e=>{
     if(!freq[e.id])freq[e.id]={name:e.name,base:e.base,total:0};
     freq[e.id].total+=e.effective;
   }));
-  const dominant=Object.values(freq).sort((a,b)=>Math.abs(b.total)-Math.abs(a.total)).slice(0,4);
-  const domStr=dominant.map(d=>`<span class="pill ${d.base>0?'pos':'neg'}">${d.name}</span>`).join('');
-  const scCls=totalScore>0?'pos':totalScore<0?'neg':'zero';
-  ds.innerHTML=`
-    <div class="day-row">
-      <span class="day-key">Обща оценка</span>
-      <span class="day-val ${scCls}">${totalScore>0?'+':''}${totalScore}</span>
+  const dom=Object.values(freq).sort((a,b)=>Math.abs(b.total)-Math.abs(a.total)).slice(0,5);
+  const tCls=total>0?'pos':total<0?'neg':'zero';
+  const lCls=lastSc>0?'pos':lastSc<0?'neg':'zero';
+  sc.innerHTML=`
+    <div class="j-card">
+      <div class="j-card-lbl"><span>Последен запис</span><span class="j-ts">${lastDt}</span></div>
+      <div class="pills">${lastPills}</div>
+      <div class="j-foot">
+        <span class="j-score ${lCls}">${lastSc>0?'+':''}${lastSc}</span>
+        <button class="j-del" onclick="deleteEntry('${last.ts}')">✕ изтрий</button>
+      </div>
     </div>
-    <div class="day-row">
-      <span class="day-key">Записа</span>
-      <span class="day-val">${entries.length}</span>
-    </div>
-    <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">${domStr}</div>`;
+    <div class="j-card">
+      <div class="j-card-lbl"><span>Обобщение за деня</span></div>
+      <div class="sum-row"><span class="sum-key">Обща оценка</span><span class="sum-val ${tCls}">${total>0?'+':''}${total}</span></div>
+      <div class="sum-row"><span class="sum-key">Записа</span><span class="sum-val">${entries.length}</span></div>
+      <div class="pills" style="margin-top:8px">${dom.map(d=>`<span class="pill ${d.base>0?'pos':'neg'}">${d.name}</span>`).join('')}</div>
+    </div>`;
 }
 
 async function deleteEntry(ts){
   await apiDelete(ts);
   archive=archive.filter(r=>r.ts!==ts);
-  renderLastEntry(); renderDaySummary(); renderChart();
-  if(archVisible) renderArchive();
+  renderJournal();renderArchive();
+  if(currentTab==='graphs')renderChart();
 }
 
-// ── chart ──
 function getFiltered(){
-  const cut=new Date(); cut.setDate(cut.getDate()-period);
+  const cut=new Date();cut.setDate(cut.getDate()-period);
   return archive.filter(r=>r.date>=cut.toISOString().slice(0,10));
 }
 
 function renderChart(){
   const canvas=document.getElementById('main-chart');
   const wrap=canvas.parentElement;
-  const W=wrap.clientWidth-20, H=wrap.clientHeight-14;
-  canvas.width=W; canvas.height=H;
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  if(!W||!H)return;
+  canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
   const data=getFiltered();
-  if(!data.length) return;
-  const PAD={top:8,right:8,bottom:28,left:38};
-  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  if(!data.length){
+    ctx.fillStyle=MUTED;ctx.font='12px Consolas';ctx.textAlign='center';
+    ctx.fillText('Няма данни за периода',W/2,H/2);return;
+  }
+  const PAD={top:8,right:8,bottom:28,left:36};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
   if(chartMode==='score'){
+    document.getElementById('chart-title').textContent='Оценка по дни';
     const byDate={};
     data.forEach(r=>{if(!byDate[r.date])byDate[r.date]=0;byDate[r.date]+=r.score;});
     const dates=Object.keys(byDate).sort();
-    const values=dates.map(d=>byDate[d]);
-    drawBars(ctx,dates,values,cW,cH,PAD,true);
-  } else {
+    const vals=dates.map(d=>byDate[d]);
+    const maxV=Math.max(Math.abs(Math.min(...vals)),Math.abs(Math.max(...vals)),1);
+    const n=dates.length;
+    const bW=Math.max(2,Math.floor(cW/n)-2);
+    const zero=PAD.top+cH/2;
+    ctx.strokeStyle=GRID;ctx.lineWidth=0.5;
+    [.25,.5,.75,1].forEach(f=>{
+      [PAD.top+cH*f/2,PAD.top+cH-cH*f/2].forEach(y=>{
+        ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
+      });
+    });
+    ctx.strokeStyle='#444c56';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,zero);ctx.lineTo(PAD.left+cW,zero);ctx.stroke();
+    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='right';
+    const step=Math.ceil(maxV/2);
+    [-step*2,-step,0,step,step*2].forEach(v=>{
+      const y=zero-(v/maxV)*(cH/2);
+      if(y<PAD.top-4||y>PAD.top+cH+4)return;
+      ctx.fillText((v>0?'+':'')+v,PAD.left-4,y+3);
+    });
+    dates.forEach((d,i)=>{
+      const v=vals[i];
+      const x=PAD.left+i*(cW/n)+(cW/n-bW)/2;
+      const bH=Math.abs(v/maxV)*(cH/2);
+      ctx.fillStyle=v>=0?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
+      ctx.fillRect(x,v>=0?zero-bH:zero,bW,bH||1);
+    });
+    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='center';
+    const skip=Math.ceil(n/10);
+    dates.forEach((d,i)=>{
+      if(i%skip!==0)return;
+      ctx.fillText(new Date(d+'T12:00:00').toLocaleDateString('bg-BG',{day:'2-digit',month:'short'}),
+        PAD.left+i*(cW/n)+(cW/n)/2,PAD.top+cH+16);
+    });
+  }else{
+    document.getElementById('chart-title').textContent='Честота на чувствата';
     const freq={};
     data.forEach(r=>r.emotions.forEach(e=>{
-      if(!freq[e.name])freq[e.name]={count:0,pos:e.base>0};
-      freq[e.name].count++;
+      if(!freq[e.name])freq[e.name]={count:0,pos:e.base>0};freq[e.name].count++;
     }));
-    const sorted=Object.entries(freq).sort((a,b)=>b[1].count-a[1].count).slice(0,14);
-    drawFreq(ctx,sorted.map(x=>x[0]),sorted.map(x=>x[1].count),sorted.map(x=>x[1].pos),cW,cH,PAD);
-  }
-}
-
-function drawBars(ctx,dates,values,cW,cH,PAD,signed){
-  const n=dates.length; if(!n) return;
-  const maxV=Math.max(Math.abs(Math.min(...values)),Math.abs(Math.max(...values)),1);
-  const zero=PAD.top+cH/2;
-  const bW=Math.max(2,Math.floor(cW/n)-2);
-  ctx.strokeStyle=GRID; ctx.lineWidth=0.5;
-  [.25,.5,.75,1].forEach(f=>{
-    [PAD.top+cH*f/2, PAD.top+cH-cH*f/2].forEach(y=>{
+    const sorted=Object.entries(freq).sort((a,b)=>b[1].count-a[1].count).slice(0,12);
+    const n=sorted.length;
+    const maxV=Math.max(...sorted.map(x=>x[1].count),1);
+    const bW=Math.max(3,Math.floor(cW/n)-2);
+    ctx.strokeStyle=GRID;ctx.lineWidth=0.5;
+    [.25,.5,.75,1].forEach(f=>{
+      const y=PAD.top+cH-cH*f;
       ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
     });
-  });
-  ctx.strokeStyle='#444c56';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(PAD.left,zero);ctx.lineTo(PAD.left+cW,zero);ctx.stroke();
-  ctx.fillStyle=MUTED;ctx.font='9px Consolas,monospace';ctx.textAlign='right';
-  const step=Math.ceil(maxV/2);
-  [-step*2,-step,0,step,step*2].forEach(v=>{
-    const y=zero-(v/maxV)*(cH/2);
-    if(y<PAD.top-2||y>PAD.top+cH+2) return;
-    ctx.fillText((v>0?'+':'')+v,PAD.left-4,y+3);
-  });
-  dates.forEach((d,i)=>{
-    const v=values[i];
-    const x=PAD.left+i*(cW/n)+(cW/n-bW)/2;
-    const bH=Math.abs(v/maxV)*(cH/2);
-    const y=v>=0?zero-bH:zero;
-    ctx.fillStyle=v>=0?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
-    ctx.fillRect(x,y,bW,bH||1);
-  });
-  ctx.fillStyle=MUTED;ctx.font='9px Consolas,monospace';ctx.textAlign='center';
-  const skip=Math.ceil(n/18);
-  dates.forEach((d,i)=>{
-    if(i%skip!==0) return;
-    const x=PAD.left+i*(cW/n)+(cW/n)/2;
-    ctx.fillText(new Date(d+'T12:00:00').toLocaleDateString('bg-BG',{day:'2-digit',month:'short'}),x,PAD.top+cH+16);
-  });
-}
-
-function drawFreq(ctx,labels,values,posArr,cW,cH,PAD){
-  const n=labels.length; if(!n) return;
-  const maxV=Math.max(...values,1);
-  const bW=Math.max(2,Math.floor(cW/n)-2);
-  ctx.strokeStyle=GRID;ctx.lineWidth=0.5;
-  [.25,.5,.75,1].forEach(f=>{
-    const y=PAD.top+cH-cH*f;
-    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
-  });
-  ctx.fillStyle=MUTED;ctx.font='9px Consolas,monospace';ctx.textAlign='right';
-  [1,2,3,4].forEach(f=>{
-    const v=Math.round(maxV*f/4);
-    const y=PAD.top+cH-cH*f/4;
-    ctx.fillText(v,PAD.left-4,y+3);
-  });
-  labels.forEach((lbl,i)=>{
-    const v=values[i];
-    const x=PAD.left+i*(cW/n)+(cW/n-bW)/2;
-    const bH=(v/maxV)*cH;
-    ctx.fillStyle=posArr[i]?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
-    ctx.fillRect(x,PAD.top+cH-bH,bW,bH||1);
-  });
-  ctx.fillStyle=MUTED;ctx.font='9px Consolas,monospace';ctx.textAlign='center';
-  labels.forEach((lbl,i)=>{
-    const x=PAD.left+i*(cW/n)+(cW/n)/2;
-    ctx.fillText(lbl.length>8?lbl.slice(0,7)+'…':lbl,x,PAD.top+cH+16);
-  });
+    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='right';
+    [1,2,3,4].forEach(f=>{
+      ctx.fillText(Math.round(maxV*f/4),PAD.left-4,PAD.top+cH-cH*f/4+3);
+    });
+    sorted.forEach(([lbl,d],i)=>{
+      const bH=(d.count/maxV)*cH;
+      ctx.fillStyle=d.pos?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
+      ctx.fillRect(PAD.left+i*(cW/n)+(cW/n-bW)/2,PAD.top+cH-bH,bW,bH||1);
+    });
+    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='center';
+    sorted.forEach(([lbl],i)=>{
+      ctx.fillText(lbl.length>7?lbl.slice(0,6)+'…':lbl,
+        PAD.left+i*(cW/n)+(cW/n)/2,PAD.top+cH+16);
+    });
+  }
 }
 
 function setPeriod(p,btn){
   period=p;
   document.querySelectorAll('.per-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderChart();
+  btn.classList.add('active');renderChart();
 }
 function setMode(m,btn){
   chartMode=m;
-  document.querySelectorAll('.chart-mode').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderChart();
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderChart();
 }
-window.addEventListener('resize', renderChart);
-
-function toggleArchive(){
-  archVisible=!archVisible;
-  const ov=document.getElementById('arch-overlay');
-  if(archVisible){ov.classList.add('show');renderArchive();}
-  else ov.classList.remove('show');
-}
+window.addEventListener('resize',()=>{if(currentTab==='graphs')renderChart();});
 
 function renderArchive(){
-  document.getElementById('arch-lbl').textContent=`Архив — ${archive.length} записа`;
-  const tbody=document.getElementById('arch-tbody');
-  if(!archive.length){
-    tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--t3)">Няма записи</td></tr>`;
-    return;
-  }
-  const sorted=[...archive].sort((a,b)=>{
-    if(archSort.f==='ts')    return archSort.d*a.ts.localeCompare(b.ts);
-    if(archSort.f==='score') return archSort.d*(a.score-b.score);
-    if(archSort.f==='count') return archSort.d*(a.emotions.length-b.emotions.length);
-    return 0;
-  });
-  tbody.innerHTML=sorted.map(r=>{
+  const scroll=document.getElementById('arch-scroll');
+  document.getElementById('arch-count').textContent=archive.length+' записа';
+  if(!archive.length){scroll.innerHTML='<div class="arch-empty">Няма записи</div>';return;}
+  scroll.innerHTML=archive.map(r=>{
     const sc=r.score;
-    const scCls=sc>0?'score-pos':sc<0?'score-neg':'score-z';
+    const scCls=sc>0?'pos':sc<0?'neg':'zero';
     const dt=new Date(r.date+'T'+r.time).toLocaleString('bg-BG',
       {weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const top=r.emotions.slice().sort((a,b)=>Math.abs(b.effective)-Math.abs(a.effective))
-      .slice(0,3).map(e=>`<span class="pill ${e.base>0?'pos':'neg'}">${e.name}</span>`).join('');
-    const all=r.emotions.map(e=>`<span class="pill ${e.base>0?'pos':'neg'}">${e.name}</span>`).join('');
-    return`<tr>
-      <td>${dt}</td>
-      <td><span class="pill ${scCls}">${sc>0?'+':''}${sc}</span></td>
-      <td>${top}</td>
-      <td style="color:var(--t2)">${r.emotions.length}</td>
-      <td>${all}</td>
-    </tr>`;
+    const pills=r.emotions.slice().sort((a,b)=>Math.abs(b.effective)-Math.abs(a.effective))
+      .map(e=>`<span class="pill ${e.base>0?'pos':'neg'}">${e.name}</span>`).join('');
+    return`<div class="arch-entry">
+      <div class="arch-dt">${dt}</div>
+      <div class="arch-pills">${pills}</div>
+      <div class="arch-foot">
+        <span class="arch-score ${scCls}">${sc>0?'+':''}${sc}</span>
+        <button class="arch-del" onclick="deleteEntry('${r.ts}')">✕</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
-function sortBy(f){
-  if(archSort.f===f) archSort.d*=-1; else{archSort.f=f;archSort.d=-1;}
-  renderArchive();
-}
-
 async function clearArchive(){
-  if(!confirm('Изтриване на целия архив?')) return;
-  for(const r of archive) await apiDelete(r.ts);
-  archive=[];
-  renderArchive(); renderLastEntry(); renderDaySummary(); renderChart();
+  if(!confirm('Изтриване на целия архив?'))return;
+  for(const r of archive)await apiDelete(r.ts);
+  archive=[];renderArchive();renderJournal();
+  if(currentTab==='graphs')renderChart();
 }
 
-// ── boot ──
-buildTable(); refresh();
-apiLoad();
+buildRows();refresh();apiLoad();
 </script>
 </body>
 </html>
