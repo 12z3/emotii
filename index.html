@@ -11,7 +11,7 @@
 :root{
   --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#2d333b;
   --b1:#30363d;--b2:#444c56;
-  --t1:#e8f0f8;--t2:#a0aeba;--t3:#7a8a98;
+  --t1:#ffffff;--t2:#c8d8e8;--t3:#a0b4c4;
   --pos:#57ab5a;--pos-l:rgba(87,171,90,.15);
   --neg:#e5534b;--neg-l:rgba(229,83,75,.13);
   --acc:#539bf5;
@@ -54,7 +54,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);
 .score-num{font-size:40px;font-weight:700;line-height:1;min-width:80px}
 .score-num.pos{color:var(--pos)}.score-num.neg{color:var(--neg)}.score-num.zero{color:var(--t1)}
 .score-info{display:flex;flex-direction:column;gap:4px;min-width:0}
-.score-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.score-lbl{font-size:13px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
 .score-dom{font-size:12px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .action-row{display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap}
@@ -69,7 +69,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);
   border:1px solid var(--b2);background:transparent;color:var(--t2);border-radius:8px;cursor:pointer}
 .clear-btn:active{opacity:.7}
 
-.grp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;padding:2px 2px;flex-shrink:0}
+.grp-lbl{font-size:13px;text-transform:uppercase;letter-spacing:.07em;padding:2px 2px;flex-shrink:0}
 .grp-lbl.pos{color:rgba(87,171,90,.8)}.grp-lbl.neg{color:rgba(229,83,75,.8)}
 
 .emo-row{background:var(--bg2);border:1px solid var(--b1);border-radius:8px;
@@ -513,7 +513,7 @@ function renderChart(){
     ctx.fillStyle=MUTED;ctx.font='12px Consolas';ctx.textAlign='center';
     ctx.fillText('Няма данни за периода',W/2,H/2);return;
   }
-  const PAD={top:8,right:8,bottom:28,left:36};
+  const PAD={top:8,right:8,bottom:28,left:42};
   const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
   if(chartMode==='score'){
     document.getElementById('chart-title').textContent='Оценка по дни';
@@ -523,7 +523,7 @@ function renderChart(){
     const vals=dates.map(d=>byDate[d]);
     const maxV=Math.max(Math.abs(Math.min(...vals)),Math.abs(Math.max(...vals)),1);
     const n=dates.length;
-    const bW=Math.max(2,Math.floor(cW/n)-2);
+    const bW=Math.max(2,Math.min(Math.floor(cW/n)-4, 40));
     const zero=PAD.top+cH/2;
     ctx.strokeStyle=GRID;ctx.lineWidth=0.5;
     [.25,.5,.75,1].forEach(f=>{
@@ -533,7 +533,7 @@ function renderChart(){
     });
     ctx.strokeStyle='#444c56';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(PAD.left,zero);ctx.lineTo(PAD.left+cW,zero);ctx.stroke();
-    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='right';
+    ctx.fillStyle=MUTED;ctx.font='11px Consolas';ctx.textAlign='right';
     const step=Math.ceil(maxV/2);
     [-step*2,-step,0,step,step*2].forEach(v=>{
       const y=zero-(v/maxV)*(cH/2);
@@ -547,7 +547,7 @@ function renderChart(){
       ctx.fillStyle=v>=0?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
       ctx.fillRect(x,v>=0?zero-bH:zero,bW,bH||1);
     });
-    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='center';
+    ctx.fillStyle=MUTED;ctx.font='11px Consolas';ctx.textAlign='center';
     const skip=Math.ceil(n/10);
     dates.forEach((d,i)=>{
       if(i%skip!==0)return;
@@ -563,13 +563,13 @@ function renderChart(){
     const sorted=Object.entries(freq).sort((a,b)=>b[1].count-a[1].count).slice(0,12);
     const n=sorted.length;
     const maxV=Math.max(...sorted.map(x=>x[1].count),1);
-    const bW=Math.max(3,Math.floor(cW/n)-2);
+    const bW=Math.max(3,Math.min(Math.floor(cW/n)-4, 40));
     ctx.strokeStyle=GRID;ctx.lineWidth=0.5;
     [.25,.5,.75,1].forEach(f=>{
       const y=PAD.top+cH-cH*f;
       ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
     });
-    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='right';
+    ctx.fillStyle=MUTED;ctx.font='11px Consolas';ctx.textAlign='right';
     [1,2,3,4].forEach(f=>{
       ctx.fillText(Math.round(maxV*f/4),PAD.left-4,PAD.top+cH-cH*f/4+3);
     });
@@ -578,7 +578,7 @@ function renderChart(){
       ctx.fillStyle=d.pos?'rgba(87,171,90,.7)':'rgba(229,83,75,.65)';
       ctx.fillRect(PAD.left+i*(cW/n)+(cW/n-bW)/2,PAD.top+cH-bH,bW,bH||1);
     });
-    ctx.fillStyle=MUTED;ctx.font='9px Consolas';ctx.textAlign='center';
+    ctx.fillStyle=MUTED;ctx.font='11px Consolas';ctx.textAlign='center';
     sorted.forEach(([lbl],i)=>{
       ctx.fillText(lbl.length>7?lbl.slice(0,6)+'…':lbl,
         PAD.left+i*(cW/n)+(cW/n)/2,PAD.top+cH+16);
