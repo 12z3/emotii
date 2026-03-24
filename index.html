@@ -391,8 +391,30 @@ function calcScore(){
   return EMO.reduce((s,e)=>sel[e.id]!==undefined?s+Math.round(e.base*(sel[e.id]/5)):s,0);
 }
 
+function getDayAvg(){
+  const date=document.getElementById('inp-date').value;
+  const entries=archive.filter(r=>r.date===date);
+  if(!entries.length) return null;
+  const total=entries.reduce((s,r)=>s+r.score,0);
+  return Math.round(total/entries.length);
+}
+
 function refresh(){
-  const score=calcScore();
+  const hasSelection=Object.keys(sel).length>0;
+  let score, label;
+  if(hasSelection){
+    score=calcScore();
+    label=null;
+  } else {
+    const avg=getDayAvg();
+    if(avg!==null){
+      score=avg;
+      label='средна за деня';
+    } else {
+      score=0;
+      label=null;
+    }
+  }
   const sn=document.getElementById('score-num');
   sn.textContent=(score>0?'+':'')+score;
   sn.className='score-num '+(score>0?'pos':score<0?'neg':'zero');
@@ -400,7 +422,8 @@ function refresh(){
     .map(e=>({...e,eff:Math.round(e.base*(sel[e.id]/5))}))
     .sort((a,b)=>Math.abs(b.eff)-Math.abs(a.eff));
   document.getElementById('score-dom').textContent=
-    active.length?active.slice(0,3).map(e=>e.name).join(', '):'Изберете чувства';
+    label ? label :
+    active.length ? active.slice(0,3).map(e=>e.name).join(', ') : 'Изберете чувства';
 }
 
 function clearSel(){
@@ -419,7 +442,7 @@ async function apiLoad(){
   setSS('busy');
   try{const r=await fetch('/entries?days=365');archive=await r.json();setSS('ok');}
   catch(e){setSS('err');}
-  renderJournal();renderArchive();
+  renderJournal();renderArchive();refresh();
 }
 async function apiSave(entry){
   setSS('busy');
@@ -449,6 +472,7 @@ async function saveEntry(){
   archive.sort((a,b)=>b.ts.localeCompare(a.ts));
   document.getElementById('inp-time').value=nowTime();
   clearSel();renderJournal();renderArchive();
+  refresh();
   if(currentTab==='graphs')renderChart();
 }
 
