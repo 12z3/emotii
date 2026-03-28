@@ -239,6 +239,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);
           <div class="chart-card-title" id="chart-title">Оценка по дни</div>
           <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
         </div>
+        <div class="chart-card" id="line-card" style="display:none">
+          <div class="chart-card-title">Оценка по дни — линейна</div>
+          <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -323,7 +327,7 @@ function goTab(tab,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   if(tab==='journal')renderJournal();
-  if(tab==='graphs')setTimeout(renderChart,50);
+  if(tab==='graphs')setTimeout(()=>{renderChart();renderLineChart();},50);
   if(tab==='archive')renderArchive();
 }
 
@@ -516,7 +520,7 @@ async function deleteEntry(ts){
   await apiDelete(ts);
   archive=archive.filter(r=>r.ts!==ts);
   renderJournal();renderArchive();
-  if(currentTab==='graphs')renderChart();
+  if(currentTab==='graphs'){renderChart();renderLineChart();}
 }
 
 function getFiltered(){
@@ -541,6 +545,7 @@ function renderChart(){
   const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
   if(chartMode==='score'){
     document.getElementById('chart-title').textContent='Оценка по дни';
+    document.getElementById('line-card').style.display='none';
     const byDate={};
     data.forEach(r=>{if(!byDate[r.date])byDate[r.date]=0;byDate[r.date]+=r.score;});
     const dates=Object.keys(byDate).sort();
@@ -580,6 +585,7 @@ function renderChart(){
     });
   }else{
     document.getElementById('chart-title').textContent='Честота на чувствата';
+    setTimeout(renderLineChart,50);
     const freq={};
     data.forEach(r=>r.emotions.forEach(e=>{
       if(!freq[e.name])freq[e.name]={count:0,pos:e.base>0};freq[e.name].count++;
@@ -610,6 +616,89 @@ function renderChart(){
   }
 }
 
+function renderLineChart(){
+  const card=document.getElementById('line-card');
+  const canvas=document.getElementById('line-chart');
+  const data=getFiltered();
+  if(!data.length){card.style.display='none';return;}
+  card.style.display='block';
+  const wrap=canvas.parentElement;
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  if(!W||!H)return;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const byDate={};
+  data.forEach(r=>{if(!byDate[r.date])byDate[r.date]=0;byDate[r.date]+=r.score;});
+  const dates=Object.keys(byDate).sort();
+  const vals=dates.map(d=>byDate[d]);
+  if(dates.length<1){card.style.display='none';return;}
+  const PAD={top:16,right:16,bottom:32,left:46};
+  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
+  const maxV=Math.max(Math.abs(Math.min(...vals)),Math.abs(Math.max(...vals)),1);
+  const zero=PAD.top+cH/2;
+  const n=dates.length;
+  // grid
+  ctx.strokeStyle='rgba(48,54,61,.6)';ctx.lineWidth=0.5;
+  [.25,.5,.75,1].forEach(f=>{
+    [PAD.top+cH*f/2,PAD.top+cH-cH*f/2].forEach(y=>{
+      ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
+    });
+  });
+  // zero line
+  ctx.strokeStyle='#555f6b';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD.left,zero);ctx.lineTo(PAD.left+cW,zero);ctx.stroke();
+  // Y labels
+  ctx.fillStyle='#ffffff';ctx.font='13px Consolas';ctx.textAlign='right';
+  const step=Math.ceil(maxV/2);
+  [-step*2,-step,0,step,step*2].forEach(v=>{
+    const y=zero-(v/maxV)*(cH/2);
+    if(y<PAD.top-4||y>PAD.top+cH+4)return;
+    ctx.fillText((v>0?'+':'')+v,PAD.left-6,y+4);
+  });
+  // fill area
+  if(n>1){
+    ctx.beginPath();
+    dates.forEach((d,i)=>{
+      const x=PAD.left+i*(cW/(n-1));
+      const y=zero-(vals[i]/maxV)*(cH/2);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(PAD.left+(n-1)*(cW/(n-1)),zero);
+    ctx.lineTo(PAD.left,zero);
+    ctx.closePath();
+    ctx.fillStyle='rgba(83,155,245,.12)';
+    ctx.fill();
+  }
+  // line
+  ctx.beginPath();ctx.strokeStyle='#539bf5';ctx.lineWidth=2;ctx.lineJoin='round';
+  dates.forEach((d,i)=>{
+    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
+    const y=zero-(vals[i]/maxV)*(cH/2);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // dots
+  dates.forEach((d,i)=>{
+    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
+    const y=zero-(vals[i]/maxV)*(cH/2);
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle=vals[i]>=0?'#57ab5a':'#e5534b';
+    ctx.fill();
+    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.5;
+    ctx.stroke();
+  });
+  // X labels
+  ctx.fillStyle='#ffffff';ctx.font='13px Consolas';ctx.textAlign='center';
+  const skip=Math.ceil(n/10);
+  dates.forEach((d,i)=>{
+    if(i%skip!==0&&i!==n-1)return;
+    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
+    ctx.fillText(new Date(d+'T12:00:00').toLocaleDateString('bg-BG',{day:'2-digit',month:'short'}),x,PAD.top+cH+22);
+  });
+}
+
 function setPeriod(p,btn){
   period=p;
   document.querySelectorAll('.per-btn').forEach(b=>b.classList.remove('active'));
@@ -620,7 +709,7 @@ function setMode(m,btn){
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');renderChart();
 }
-window.addEventListener('resize',()=>{if(currentTab==='graphs')renderChart();});
+window.addEventListener('resize',()=>{if(currentTab==='graphs'){renderChart();renderLineChart();}});
 
 function renderArchive(){
   const scroll=document.getElementById('arch-scroll');
