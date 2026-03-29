@@ -239,7 +239,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);
           <div class="chart-card-title" id="chart-title">Оценка по дни</div>
           <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
         </div>
-        <div class="chart-card" id="line-card" style="display:none">
+        <div class="chart-card" id="line-card">
           <div class="chart-card-title">Оценка по дни — линейна</div>
           <div class="chart-wrap"><canvas id="line-chart"></canvas></div>
         </div>
@@ -545,7 +545,6 @@ function renderChart(){
   const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
   if(chartMode==='score'){
     document.getElementById('chart-title').textContent='Оценка по дни';
-    document.getElementById('line-card').style.display='none';
     const byDate={};
     data.forEach(r=>{if(!byDate[r.date])byDate[r.date]=0;byDate[r.date]+=r.score;});
     const dates=Object.keys(byDate).sort();
@@ -585,7 +584,6 @@ function renderChart(){
     });
   }else{
     document.getElementById('chart-title').textContent='Честота на чувствата';
-    setTimeout(renderLineChart,50);
     const freq={};
     data.forEach(r=>r.emotions.forEach(e=>{
       if(!freq[e.name])freq[e.name]={count:0,pos:e.base>0};freq[e.name].count++;
@@ -702,12 +700,12 @@ function renderLineChart(){
 function setPeriod(p,btn){
   period=p;
   document.querySelectorAll('.per-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');renderChart();
+  btn.classList.add('active');renderChart();renderLineChart();
 }
 function setMode(m,btn){
   chartMode=m;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');renderChart();
+  btn.classList.add('active');renderChart();renderLineChart();
 }
 window.addEventListener('resize',()=>{if(currentTab==='graphs'){renderChart();renderLineChart();}});
 
