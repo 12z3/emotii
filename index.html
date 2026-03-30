@@ -615,85 +615,104 @@ function renderChart(){
 }
 
 function renderLineChart(){
-  const card=document.getElementById('line-card');
   const canvas=document.getElementById('line-chart');
-  const data=getFiltered();
-  if(!data.length){card.style.display='none';return;}
-  card.style.display='block';
   const wrap=canvas.parentElement;
-  const W=wrap.clientWidth,H=wrap.clientHeight;
-  if(!W||!H)return;
-  canvas.width=W;canvas.height=H;
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  if(!W||!H) return;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
+
+  const data=getFiltered();
   const byDate={};
-  data.forEach(r=>{if(!byDate[r.date])byDate[r.date]=0;byDate[r.date]+=r.score;});
+  data.forEach(r=>{
+    if(!byDate[r.date]) byDate[r.date]=0;
+    byDate[r.date]+=r.score;
+  });
   const dates=Object.keys(byDate).sort();
   const vals=dates.map(d=>byDate[d]);
-  if(dates.length<1){card.style.display='none';return;}
-  const PAD={top:16,right:16,bottom:32,left:46};
-  const cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom;
-  const maxV=Math.max(Math.abs(Math.min(...vals)),Math.abs(Math.max(...vals)),1);
-  const zero=PAD.top+cH/2;
   const n=dates.length;
-  // grid
-  ctx.strokeStyle='rgba(48,54,61,.6)';ctx.lineWidth=0.5;
-  [.25,.5,.75,1].forEach(f=>{
-    [PAD.top+cH*f/2,PAD.top+cH-cH*f/2].forEach(y=>{
-      ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
-    });
+
+  if(n===0){
+    ctx.fillStyle='#ffffff'; ctx.font='13px Consolas'; ctx.textAlign='center';
+    ctx.fillText('Няма данни за периода', W/2, H/2);
+    return;
+  }
+
+  const PAD={top:20, right:20, bottom:36, left:52};
+  const cW=W-PAD.left-PAD.right;
+  const cH=H-PAD.top-PAD.bottom;
+
+  const minV=Math.min(...vals);
+  const maxV=Math.max(...vals);
+  const absMax=Math.max(Math.abs(minV), Math.abs(maxV), 1);
+  // symmetric scale around 0
+  const scale=absMax;
+
+  function xPos(i){ return n===1 ? PAD.left+cW/2 : PAD.left + i*(cW/(n-1)); }
+  function yPos(v){ return PAD.top + cH/2 - (v/scale)*(cH/2); }
+
+  // grid lines
+  ctx.strokeStyle='rgba(48,54,61,.7)'; ctx.lineWidth=0.5;
+  [-scale, -scale/2, 0, scale/2, scale].forEach(v=>{
+    const y=yPos(v);
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(PAD.left+cW,y); ctx.stroke();
   });
+
   // zero line
-  ctx.strokeStyle='#555f6b';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(PAD.left,zero);ctx.lineTo(PAD.left+cW,zero);ctx.stroke();
+  ctx.strokeStyle='#666f7a'; ctx.lineWidth=1;
+  const zy=yPos(0);
+  ctx.beginPath(); ctx.moveTo(PAD.left,zy); ctx.lineTo(PAD.left+cW,zy); ctx.stroke();
+
   // Y labels
-  ctx.fillStyle='#ffffff';ctx.font='13px Consolas';ctx.textAlign='right';
-  const step=Math.ceil(maxV/2);
-  [-step*2,-step,0,step,step*2].forEach(v=>{
-    const y=zero-(v/maxV)*(cH/2);
-    if(y<PAD.top-4||y>PAD.top+cH+4)return;
-    ctx.fillText((v>0?'+':'')+v,PAD.left-6,y+4);
+  ctx.fillStyle='#ffffff'; ctx.font='13px Consolas'; ctx.textAlign='right';
+  [-scale, -scale/2, 0, scale/2, scale].forEach(v=>{
+    const y=yPos(v);
+    const lbl=Math.round(v);
+    ctx.fillText((lbl>0?'+':'')+lbl, PAD.left-8, y+5);
   });
-  // fill area
+
+  // fill area under line
   if(n>1){
     ctx.beginPath();
-    dates.forEach((d,i)=>{
-      const x=PAD.left+i*(cW/(n-1));
-      const y=zero-(vals[i]/maxV)*(cH/2);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
-    ctx.lineTo(PAD.left+(n-1)*(cW/(n-1)),zero);
-    ctx.lineTo(PAD.left,zero);
+    ctx.moveTo(xPos(0), yPos(0));
+    dates.forEach((_,i)=> ctx.lineTo(xPos(i), yPos(vals[i])));
+    ctx.lineTo(xPos(n-1), yPos(0));
     ctx.closePath();
-    ctx.fillStyle='rgba(83,155,245,.12)';
+    ctx.fillStyle='rgba(83,155,245,.10)';
     ctx.fill();
   }
+
   // line
-  ctx.beginPath();ctx.strokeStyle='#539bf5';ctx.lineWidth=2;ctx.lineJoin='round';
-  dates.forEach((d,i)=>{
-    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
-    const y=zero-(vals[i]/maxV)*(cH/2);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-  // dots
-  dates.forEach((d,i)=>{
-    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
-    const y=zero-(vals[i]/maxV)*(cH/2);
+  if(n>1){
     ctx.beginPath();
-    ctx.arc(x,y,4,0,Math.PI*2);
-    ctx.fillStyle=vals[i]>=0?'#57ab5a':'#e5534b';
+    ctx.strokeStyle='#539bf5'; ctx.lineWidth=2.5; ctx.lineJoin='round';
+    dates.forEach((_,i)=>{
+      const x=xPos(i), y=yPos(vals[i]);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  }
+
+  // dots
+  dates.forEach((_,i)=>{
+    const x=xPos(i), y=yPos(vals[i]);
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI*2);
+    ctx.fillStyle=vals[i]>=0 ? '#57ab5a' : '#e5534b';
     ctx.fill();
-    ctx.strokeStyle='#0d1117';ctx.lineWidth=1.5;
+    ctx.strokeStyle='#0d1117'; ctx.lineWidth=2;
     ctx.stroke();
   });
+
   // X labels
-  ctx.fillStyle='#ffffff';ctx.font='13px Consolas';ctx.textAlign='center';
+  ctx.fillStyle='#ffffff'; ctx.font='13px Consolas'; ctx.textAlign='center';
   const skip=Math.ceil(n/10);
   dates.forEach((d,i)=>{
-    if(i%skip!==0&&i!==n-1)return;
-    const x=n>1?PAD.left+i*(cW/(n-1)):PAD.left+cW/2;
-    ctx.fillText(new Date(d+'T12:00:00').toLocaleDateString('bg-BG',{day:'2-digit',month:'short'}),x,PAD.top+cH+22);
+    if(n>1 && i%skip!==0 && i!==n-1) return;
+    const x=xPos(i);
+    const lbl=new Date(d+'T12:00:00').toLocaleDateString('bg-BG',{day:'2-digit',month:'short'});
+    ctx.fillText(lbl, x, PAD.top+cH+26);
   });
 }
 
